@@ -1,0 +1,7 @@
+{
+  "name": "Remix: TPE PRO V4",
+  "description": "Simple TPE records",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

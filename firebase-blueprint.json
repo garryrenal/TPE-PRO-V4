@@ -1,0 +1,86 @@
+{
+  "entities": {
+    "TPERecord": {
+      "title": "TPE Record",
+      "description": "A record of a Therapeutic Plasma Exchange procedure.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The UID of the user who owns this record." },
+        "firstName": { "type": "string", "description": "Patient's first name." },
+        "lastName": { "type": "string", "description": "Patient's last name." },
+        "patientId": { "type": "string", "description": "Patient's ID number." },
+        "date": { "type": "string", "format": "date", "description": "The date of the procedure." },
+        "time": { "type": "string", "description": "The time of the procedure." },
+        "acUsed": { "type": "number", "description": "AC Used (mL)" },
+        "removeBag": { "type": "number", "description": "Remove Bag (mL)" },
+        "replacementUsed": { "type": "number", "description": "Replacement Used (mL)" },
+        "bolus": { "type": "number", "description": "Bolus (mL)" },
+        "tubingSet": { "type": "number", "description": "Tubing Set (mL)" },
+        "rinseback": { "type": "number", "description": "Rinseback (mL)" },
+        "startTime": { "type": "string", "description": "Start Time" },
+        "endTime": { "type": "string", "description": "End Time" },
+        "runTime": { "type": "number", "description": "Run Time (min)" },
+        "fluidBalanceMl": { "type": "number", "description": "Fluid Balance (mL)" },
+        "fluidBalancePercent": { "type": "number", "description": "Fluid Balance (%)" },
+        "inletProcessed": { "type": "number", "description": "Inlet Processed (mL)" },
+        "plasmaVolumesExchanged": { "type": "number", "description": "Plasma Volumes Exchanged" },
+        "plasmaRemoved": { "type": "number", "description": "Plasma Removed (mL)" },
+        "acInRemoveBag": { "type": "number", "description": "AC in Remove Bag (mL)" },
+        "acToPatient": { "type": "number", "description": "AC to Patient (mL)" },
+        "acUsedForPrime": { "type": "number", "description": "AC Used for Prime (mL)" },
+        "salineToPatientAir": { "type": "number", "description": "Saline to Patient due to Air Removal (mL)" },
+        "customPrime": { "type": "number", "description": "Custom Prime (mL)" },
+        "salineRinse": { "type": "number", "description": "Saline Rinse (mL)" },
+        "sex": { "type": "string", "description": "Patient's sex (M/F)." },
+        "ht": { "type": "number", "description": "Patient's height (cm)." },
+        "wt": { "type": "number", "description": "Patient's weight (kg)." },
+        "hct": { "type": "number", "description": "Patient's hematocrit (%)." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp when the record was created." },
+        "entryDate": { "type": "string", "format": "date", "description": "The date when the record was entered into the system." },
+        "entryTime": { "type": "string", "description": "The time when the record was entered into the system." }
+      },
+      "required": ["userId", "date", "createdAt"]
+    },
+    "ProcedureSummary": {
+      "title": "Procedure Summary",
+      "description": "A summary record of a TPE procedure with calculated totals.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The UID of the user who owns this record." },
+        "firstName": { "type": "string", "description": "Patient's first name." },
+        "lastName": { "type": "string", "description": "Patient's last name." },
+        "patientId": { "type": "string", "description": "Patient's ID number." },
+        "date": { "type": "string", "format": "date", "description": "The date of the procedure." },
+        "startTime": { "type": "string", "description": "Start Time" },
+        "endTime": { "type": "string", "description": "End Time" },
+        "replacedVol": { "type": "number", "description": "Replaced Vol (mL)" },
+        "acToPt": { "type": "number", "description": "AC to pt (mL)" },
+        "rinseback": { "type": "number", "description": "Rinseback (mL)" },
+        "addlVol": { "type": "number", "description": "Add'l Vol (mL)" },
+        "totalA": { "type": "number", "description": "Total (A) (mL)" },
+        "removedVol": { "type": "number", "description": "Removed Vol (mL)" },
+        "acCollBag": { "type": "number", "description": "AC coll bag (mL)" },
+        "totalB": { "type": "number", "description": "Total (B) (mL)" },
+        "fluidBalanceMl": { "type": "number", "description": "Pt. Fluid Bal (A-B) (mL)" },
+        "fluidBalancePercent": { "type": "number", "description": "Fluid Balance (%)" },
+        "finalPlasmaExch": { "type": "number", "description": "Final Plasma Exch" },
+        "bloodVolProcessed": { "type": "number", "description": "Blood Vol Processed (mL)" },
+        "acInfRate": { "type": "number", "description": "AC Inf. Rate (mL/min/L)" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp when the record was created." },
+        "entryDate": { "type": "string", "format": "date", "description": "The date when the record was entered into the system." },
+        "entryTime": { "type": "string", "description": "The time when the record was entered into the system." }
+      },
+      "required": ["userId", "date", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/records/{recordId}": {
+      "schema": "TPERecord",
+      "description": "Collection of TPE records."
+    },
+    "/procedureSummaries/{summaryId}": {
+      "schema": "ProcedureSummary",
+      "description": "Collection of TPE procedure summaries."
+    }
+  }
+}

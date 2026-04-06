@@ -1,0 +1,211 @@
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// Collection: records
+// Document ID: auto-generated
+// Fields:
+//   - userId: string (required) - Owner UID
+//   - recId: string (optional) - 10-char alphanumeric ID
+//   - firstName: string (optional)
+//   - lastName: string (optional)
+//   - middleInitial: string (optional)
+//   - patientId: string (optional)
+//   - date: string (required) - Procedure date
+//   - time: string (optional) - Procedure time
+//   - acUsed: number (optional)
+//   - removeBag: number (optional)
+//   - replacementUsed: number (optional)
+//   - bolus: number (optional)
+//   - tubingSet: number (optional)
+//   - rinseback: number (optional)
+//   - startTime: string (optional)
+//   - endTime: string (optional)
+//   - runTime: number (optional)
+//   - fluidBalanceMl: number (optional)
+//   - fluidBalancePercent: number (optional)
+//   - inletProcessed: number (optional)
+//   - plasmaVolumesExchanged: number (optional)
+//   - plasmaRemoved: number (optional)
+//   - acInRemoveBag: number (optional)
+//   - acToPatient: number (optional)
+//   - acUsedForPrime: number (optional)
+//   - salineToPatientAir: number (optional)
+//   - customPrime: number (optional)
+//   - salineRinse: number (optional)
+//   - createdAt: string (required) - ISO 8601 timestamp
+//   - entryDate: string (optional) - Date of entry (YYYY-MM-DD)
+//   - entryTime: string (optional) - Time of entry (HH:mm:ss)
+//
+// Collection: procedureSummaries
+// Document ID: auto-generated
+// Fields:
+//   - userId: string (required)
+//   - recId: string (optional)
+//   - firstName: string (optional)
+//   - lastName: string (optional)
+//   - middleInitial: string (optional)
+//   - patientId: string (optional)
+//   - date: string (required)
+//   - startTime: string (optional)
+//   - endTime: string (optional)
+//   - replacedVol: number (optional)
+//   - acToPt: number (optional)
+//   - rinseback: number (optional)
+//   - addlVol: number (optional)
+//   - totalA: number (optional)
+//   - removedVol: number (optional)
+//   - acCollBag: number (optional)
+//   - totalB: number (optional)
+//   - fluidBalanceMl: number (optional)
+//   - fluidBalancePercent: number (optional)
+//   - finalPlasmaExch: number (optional)
+//   - bloodVolProcessed: number (optional)
+//   - acInfRate: number (optional)
+//   - createdAt: string (required)
+//   - entryDate: string (optional) - Date of entry (YYYY-MM-DD)
+//   - entryTime: string (optional) - Time of entry (HH:mm:ss)
+//
+// ===============================================================
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        ((exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin') ||
+          (request.auth.token.email == "garry.renal@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isValidUser(data) {
+      return data.userId is string &&
+             data.email is string &&
+             (!('role' in data) || data.role in ['admin', 'user']);
+    }
+
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      allow create: if isAuthenticated() && isOwner(userId) && 
+                      isValidUser(request.resource.data) &&
+                      (!('role' in request.resource.data) || request.resource.data.role == 'user');
+      allow update: if isAuthenticated() && (isAdmin() || (isOwner(userId) && 
+                      isValidUser(request.resource.data) &&
+                      request.resource.data.role == resource.data.role));
+    }
+
+    function isValidTPERecord(data) {
+      return data.userId is string &&
+             data.date is string &&
+             data.createdAt is string &&
+             (!('recId' in data) || data.recId is string) &&
+             (!('firstName' in data) || data.firstName is string) &&
+             (!('lastName' in data) || data.lastName is string) &&
+             (!('middleInitial' in data) || data.middleInitial is string) &&
+             (!('patientId' in data) || data.patientId is string) &&
+             (!('time' in data) || data.time is string) &&
+             (!('startTime' in data) || data.startTime is string) &&
+             (!('endTime' in data) || data.endTime is string) &&
+             (!('acUsed' in data) || data.acUsed is number) &&
+             (!('removeBag' in data) || data.removeBag is number) &&
+             (!('replacementUsed' in data) || data.replacementUsed is number) &&
+             (!('bolus' in data) || data.bolus is number) &&
+             (!('tubingSet' in data) || data.tubingSet is number) &&
+             (!('rinseback' in data) || data.rinseback is number) &&
+             (!('runTime' in data) || data.runTime is number) &&
+             (!('fluidBalanceMl' in data) || data.fluidBalanceMl is number) &&
+             (!('fluidBalancePercent' in data) || data.fluidBalancePercent is number) &&
+             (!('inletProcessed' in data) || data.inletProcessed is number) &&
+             (!('plasmaVolumesExchanged' in data) || data.plasmaVolumesExchanged is number) &&
+             (!('plasmaRemoved' in data) || data.plasmaRemoved is number) &&
+             (!('acInRemoveBag' in data) || data.acInRemoveBag is number) &&
+             (!('acToPatient' in data) || data.acToPatient is number) &&
+             (!('acUsedForPrime' in data) || data.acUsedForPrime is number) &&
+             (!('salineToPatientAir' in data) || data.salineToPatientAir is number) &&
+             (!('customPrime' in data) || data.customPrime is number) &&
+             (!('salineRinse' in data) || data.salineRinse is number) &&
+             (!('sex' in data) || data.sex is string) &&
+             (!('ht' in data) || data.ht is number) &&
+             (!('wt' in data) || data.wt is number) &&
+             (!('hct' in data) || data.hct is number) &&
+             (!('entryDate' in data) || data.entryDate is string) &&
+             (!('entryTime' in data) || data.entryTime is string);
+    }
+
+    function isValidProcedureSummary(data) {
+      return data.userId is string &&
+             data.date is string &&
+             data.createdAt is string &&
+             (!('recId' in data) || data.recId is string) &&
+             (!('firstName' in data) || data.firstName is string) &&
+             (!('lastName' in data) || data.lastName is string) &&
+             (!('middleInitial' in data) || data.middleInitial is string) &&
+             (!('patientId' in data) || data.patientId is string) &&
+             (!('startTime' in data) || data.startTime is string) &&
+             (!('endTime' in data) || data.endTime is string) &&
+             (!('replacedVol' in data) || data.replacedVol is number) &&
+             (!('acToPt' in data) || data.acToPt is number) &&
+             (!('rinseback' in data) || data.rinseback is number) &&
+             (!('addlVol' in data) || data.addlVol is number) &&
+             (!('totalA' in data) || data.totalA is number) &&
+             (!('removedVol' in data) || data.removedVol is number) &&
+             (!('acCollBag' in data) || data.acCollBag is number) &&
+             (!('totalB' in data) || data.totalB is number) &&
+             (!('fluidBalanceMl' in data) || data.fluidBalanceMl is number) &&
+             (!('fluidBalancePercent' in data) || data.fluidBalancePercent is number) &&
+             (!('finalPlasmaExch' in data) || data.finalPlasmaExch is number) &&
+             (!('bloodVolProcessed' in data) || data.bloodVolProcessed is number) &&
+             (!('acInfRate' in data) || data.acInfRate is number) &&
+             (!('entryDate' in data) || data.entryDate is string) &&
+             (!('entryTime' in data) || data.entryTime is string);
+    }
+
+    match /records/{recordId} {
+      allow read: if isAuthenticated() && isDocOwner();
+      allow create: if isAuthenticated() && 
+                      request.resource.data.userId == request.auth.uid &&
+                      isValidTPERecord(request.resource.data);
+      allow update: if isAuthenticated() && isDocOwner() &&
+                      request.resource.data.userId == resource.data.userId &&
+                      request.resource.data.createdAt == resource.data.createdAt &&
+                      (!('entryDate' in resource.data) || request.resource.data.entryDate == resource.data.entryDate) &&
+                      (!('entryTime' in resource.data) || request.resource.data.entryTime == resource.data.entryTime) &&
+                      isValidTPERecord(request.resource.data);
+      allow delete: if isAuthenticated() && isDocOwner();
+    }
+
+    match /procedureSummaries/{summaryId} {
+      allow read: if isAuthenticated() && isDocOwner();
+      allow create: if isAuthenticated() && 
+                      request.resource.data.userId == request.auth.uid &&
+                      isValidProcedureSummary(request.resource.data);
+      allow update: if isAuthenticated() && isDocOwner() &&
+                      request.resource.data.userId == resource.data.userId &&
+                      request.resource.data.createdAt == resource.data.createdAt &&
+                      (!('entryDate' in resource.data) || request.resource.data.entryDate == resource.data.entryDate) &&
+                      (!('entryTime' in resource.data) || request.resource.data.entryTime == resource.data.entryTime) &&
+                      isValidProcedureSummary(request.resource.data);
+      allow delete: if isAuthenticated() && isDocOwner();
+    }
+
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}

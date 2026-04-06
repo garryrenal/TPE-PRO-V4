@@ -1,0 +1,132 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@theme {
+  --color-theme-primary: var(--primary);
+  --color-theme-primary-light: var(--primary-light);
+  --color-theme-primary-dark: var(--primary-dark);
+  --color-theme-primary-bg: var(--primary-bg);
+  --color-theme-primary-border: var(--primary-border);
+  --color-theme-primary-text: var(--primary-text);
+  --color-theme-primary-shadow: var(--primary-shadow);
+  --color-theme-bg: var(--bg-main);
+  --color-theme-text: var(--text-main);
+  --color-theme-text-muted: var(--text-muted);
+  --color-theme-card: var(--card-bg);
+  --color-theme-card-border: var(--card-border);
+  --color-theme-nav: var(--nav-bg);
+  --color-theme-nav-border: var(--nav-border);
+}
+
+:root, .emerald {
+  /* Default: Emerald */
+  --primary: #059669; /* emerald-600 */
+  --primary-light: #10b981; /* emerald-500 */
+  --primary-dark: #064e3b; /* emerald-900 */
+  --primary-bg: #ecfdf5; /* emerald-50 */
+  --primary-border: #d1fae5; /* emerald-100 */
+  --primary-text: #047857; /* emerald-700 */
+  --primary-shadow: rgba(16, 185, 129, 0.2); /* emerald-500/20 */
+  --bg-main: #f8fafc;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --card-bg: #ffffff;
+  --card-border: #f1f5f9;
+  --nav-bg: rgba(255, 255, 255, 0.8);
+  --nav-border: #f1f5f9;
+}
+
+.blue, [data-theme='blue'] {
+  --primary: #2563eb; /* blue-600 */
+  --primary-light: #3b82f6; /* blue-500 */
+  --primary-dark: #1e3a8a; /* blue-900 */
+  --primary-bg: #eff6ff; /* blue-50 */
+  --primary-border: #dbeafe; /* blue-100 */
+  --primary-text: #1d4ed8; /* blue-700 */
+  --primary-shadow: rgba(59, 130, 246, 0.2); /* blue-500/20 */
+  --bg-main: #f8fafc;
+  --text-main: #0f172a;
+  --text-muted: #3b82f6;
+  --card-bg: #ffffff;
+  --card-border: #f1f5f9;
+  --nav-bg: rgba(255, 255, 255, 0.8);
+  --nav-border: #f1f5f9;
+}
+
+.violet, [data-theme='violet'] {
+  --primary: #7c3aed; /* violet-600 */
+  --primary-light: #8b5cf6; /* violet-500 */
+  --primary-dark: #4c1d95; /* violet-900 */
+  --primary-bg: #f5f3ff; /* violet-50 */
+  --primary-border: #ede9fe; /* violet-100 */
+  --primary-text: #6d28d9; /* violet-700 */
+  --primary-shadow: rgba(139, 92, 246, 0.2); /* violet-500/20 */
+  --bg-main: #f8fafc;
+  --text-main: #0f172a;
+  --text-muted: #8b5cf6;
+  --card-bg: #ffffff;
+  --card-border: #f1f5f9;
+  --nav-bg: rgba(255, 255, 255, 0.8);
+  --nav-border: #f1f5f9;
+}
+
+.amber, [data-theme='amber'] {
+  --primary: #d97706; /* amber-600 */
+  --primary-light: #f59e0b; /* amber-500 */
+  --primary-dark: #78350f; /* amber-900 */
+  --primary-bg: #fffbeb; /* amber-50 */
+  --primary-border: #fef3c7; /* amber-100 */
+  --primary-text: #b45309; /* amber-700 */
+  --primary-shadow: rgba(245, 158, 11, 0.2); /* amber-500/20 */
+  --bg-main: #fffbeb;
+  --text-main: #92400e;
+  --text-muted: #d97706;
+  --card-bg: #ffffff;
+  --card-border: #fef3c7;
+  --nav-bg: #ffffff;
+  --nav-border: #fef3c7;
+}
+
+.futuristic, [data-theme='futuristic'] {
+  --primary: #06b6d4; /* cyan-500 */
+  --primary-light: #22d3ee; /* cyan-400 */
+  --primary-dark: #083344; /* cyan-950 */
+  --primary-bg: #0f172a; /* slate-900 */
+  --primary-border: #1e293b; /* slate-800 */
+  --primary-text: #e2e8f0; /* slate-200 */
+  --primary-shadow: rgba(6, 182, 212, 0.3); /* cyan-500/30 */
+  
+  /* Additional futuristic properties */
+  --bg-main: #020617; /* slate-950 */
+  --text-main: #f8fafc; /* slate-50 */
+  --text-muted: #64748b; /* slate-500 */
+  --card-bg: #0f172a; /* slate-900 */
+  --card-border: #1e293b; /* slate-800 */
+  --nav-bg: rgba(2, 6, 23, 0.8);
+  --nav-border: #1e293b;
+}
+
+@layer utilities {
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 10px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #cbd5e1;
+  }
+}
+
+@layer base {
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    opacity: 1 !important;
+    margin: 0;
+    -webkit-appearance: inner-spin-button !important;
+  }
+}
