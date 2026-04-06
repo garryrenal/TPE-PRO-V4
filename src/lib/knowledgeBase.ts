@@ -178,18 +178,5 @@ export const KNOWLEDGE_BASE = {
     - TTP: 0.37 per 100,000/year.
     - Thrombocytosis: 22-24 per 100,000.
     - Thyroid storm: Rare.
-  `,
-
-  dialysisOfDrugs: `
-    BAILIE AND MASON'S 2022 DIALYSIS OF DRUGS
-    
-    Key for Dialyzability:
-    - Yes: Dialysis enhances plasma clearance by 30% or more during a typical 4-hour dialysis period. Supplemental dosing may be required or dosing after dialysis should be considered.
-    - No: Dialysis enhances plasma clearance by less than 30%. Supplemental dosing is usually not required.
-    - U: No published data exist but significant drug removal is unlikely based on physicochemical characteristics (protein binding, molecular size, volume of distribution).
-    - L: No published data exist, but physicochemical characteristics suggest significant removal is likely.
-    - ND: No data on drug dialyzability with this type of dialysis.
-    
-    Note: For detailed drug-specific information, refer to the full guide or www.renalpharmacyconsultants.com.
   `
 };

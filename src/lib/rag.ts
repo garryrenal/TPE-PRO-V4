@@ -11,13 +11,27 @@ export interface DocumentWithChunks {
   chunks: Chunk[];
 }
 
-// Enhanced chunking with overlap to prevent cutting off context
-export function chunkText(text: string, chunkSize: number = 1000, overlap: number = 200): string[] {
+// Semantic chunking with overlap to prevent cutting off context and respect sentence boundaries
+export function chunkText(text: string, chunkSize: number = 1200, overlap: number = 300): string[] {
   const chunks: string[] = [];
+  // Clean up excessive whitespace
+  const cleanText = text.replace(/\s+/g, ' ').trim();
+  
   let i = 0;
-  while (i < text.length) {
-    chunks.push(text.slice(i, i + chunkSize));
-    i += chunkSize - overlap;
+  while (i < cleanText.length) {
+    let end = i + chunkSize;
+    
+    // Try to find a sentence boundary near the end of the chunk to avoid cutting mid-sentence
+    if (end < cleanText.length) {
+      const searchArea = cleanText.substring(Math.max(0, end - 100), Math.min(cleanText.length, end + 100));
+      const boundary = searchArea.search(/[.!?]\s/);
+      if (boundary !== -1) {
+        end = Math.max(0, end - 100) + boundary + 1;
+      }
+    }
+    
+    chunks.push(cleanText.slice(i, end).trim());
+    i = end - overlap;
   }
   return chunks;
 }
@@ -74,7 +88,8 @@ export async function retrieveRelevantChunks(
   ai: GoogleGenAI,
   query: string,
   documents: DocumentWithChunks[],
-  topK: number = 8 // Increased from 3 to 8 for better recall
+  topK: number = 12, // Increased for better recall
+  minSimilarity: number = 0.45 // Filter out irrelevant noise
 ): Promise<{ docName: string; text: string; similarity: number }[]> {
   const queryEmbedding = await generateEmbeddings(ai, query);
   
@@ -83,7 +98,9 @@ export async function retrieveRelevantChunks(
   for (const doc of documents) {
     for (const chunk of doc.chunks) {
       const similarity = cosineSimilarity(queryEmbedding, chunk.embedding);
-      allChunks.push({ docName: chunk.docName, text: chunk.text, similarity });
+      if (similarity >= minSimilarity) {
+        allChunks.push({ docName: chunk.docName, text: chunk.text, similarity });
+      }
     }
   }
   

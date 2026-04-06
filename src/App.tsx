@@ -65,6 +65,8 @@ function AppContent() {
 
   useEffect(() => {
     localStorage.setItem('tpe-theme', theme);
+    document.documentElement.setAttribute('data-theme', theme);
+    document.documentElement.className = theme;
   }, [theme]);
   const [showThemeMenu, setShowThemeMenu] = useState(false);
   const [prefilledSummary, setPrefilledSummary] = useState<any>(null);
@@ -386,7 +388,8 @@ function AppContent() {
 
   return (
     <div className={cn(
-      "min-h-screen font-sans pb-12 transition-colors duration-500 bg-theme-bg text-theme-text"
+      "min-h-screen font-sans pb-12 transition-colors duration-500 bg-theme-bg text-theme-text",
+      theme
     )} data-theme={theme}>
       {/* Header */}
       <header className={cn(

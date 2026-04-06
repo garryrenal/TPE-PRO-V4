@@ -10,7 +10,9 @@ import {
   ChevronDown,
   ChevronUp,
   Bot,
-  User as UserIcon
+  User as UserIcon,
+  Globe,
+  Bookmark
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Markdown from 'react-markdown';
@@ -35,9 +37,26 @@ interface ChatbotProps {
   theme: string;
 }
 
+interface SavedWebKnowledge {
+  query: string;
+  answer: string;
+  sources: string[];
+  timestamp: number;
+}
+
 export function Chatbot({ appData, theme }: ChatbotProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showSavedKnowledge, setShowSavedKnowledge] = useState(false);
+  
+  const [savedWebKnowledge, setSavedWebKnowledge] = useState<SavedWebKnowledge[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('tpe-web-knowledge');
+      if (saved) return JSON.parse(saved);
+    }
+    return [];
+  });
+
   const [messages, setMessages] = useState<Message[]>([
     { role: 'model', content: "Hello! I'm your Apheresis Assistant. Upload documents related to apheresis, and I'll answer your questions based on them. I also have access to your current calculation data." }
   ]);
@@ -133,14 +152,13 @@ export function Chatbot({ appData, theme }: ChatbotProps) {
 
     try {
       // Retrieve relevant chunks
-      const relevantChunks = await retrieveRelevantChunks(ai.current, userMessage, documents, 8);
+      const relevantChunks = await retrieveRelevantChunks(ai.current, userMessage, documents, 12);
       const docContext = relevantChunks.map(c => `[Source Document: ${c.docName}]\n${c.text}`).join('\n\n---\n\n');
       
       const baseKnowledgeContext = `
         CORE DOCUMENTS (Base Knowledge):
         1. ASFA 2023 Guidelines: ${KNOWLEDGE_BASE.asfa2023}
         2. Preceptor Guide: ${KNOWLEDGE_BASE.preceptorGuide}
-        3. Dialysis of Drugs (Bailie & Mason): ${KNOWLEDGE_BASE.dialysisOfDrugs}
       `;
       
       const appStateContext = `
@@ -150,12 +168,16 @@ export function Chatbot({ appData, theme }: ChatbotProps) {
         Active Scenario: ${appData.activeScenario || 'None'}
       `;
 
+      const savedKnowledgeContext = savedWebKnowledge.length > 0 
+        ? `\nPREVIOUSLY SAVED WEB SEARCHES (Available Offline):\n${savedWebKnowledge.map(k => `Q: ${k.query}\nA: ${k.answer}`).join('\n\n')}`
+        : '';
+
       const systemInstruction = `
         You are an Apheresis Specialist Assistant. 
         Your primary source of information is the CORE DOCUMENTS provided below. 
         You also have access to relevant chunks from user-uploaded documents.
         If the answer is not in the documents, but relates to the current application data, use the application data.
-        If neither contains the answer, politely state that you don't have that information.
+        If neither contains the answer, use the Google Search tool to find the information on the web.
         
         CORE DOCUMENTS:
         ${baseKnowledgeContext}
@@ -165,18 +187,21 @@ export function Chatbot({ appData, theme }: ChatbotProps) {
         
         Relevant User Uploaded Documents Context:
         ${docContext || 'No relevant documents found.'}
+        ${savedKnowledgeContext}
         
         Rules:
-        1. Only base your answers on the provided documents (Core + Uploaded) and application data.
-        2. Be concise and professional.
-        3. Use Markdown for formatting.
-        4. If asked about calculations, refer to the current stats provided in the context.
+        1. Prioritize provided documents (Core + Uploaded) and application data.
+        2. If the information is missing, use Google Search.
+        3. Be concise and professional.
+        4. Use Markdown for formatting.
+        5. If asked about calculations, refer to the current stats provided in the context.
       `;
 
       const chat = ai.current.chats.create({
         model: "gemini-3-flash-preview",
         config: {
           systemInstruction,
+          tools: [{ googleSearch: {} }],
         },
       });
 
@@ -184,7 +209,27 @@ export function Chatbot({ appData, theme }: ChatbotProps) {
         message: userMessage 
       });
 
-      setMessages(prev => [...prev, { role: 'model', content: response.text || "I'm sorry, I couldn't generate a response." }]);
+      const responseText = response.text || "I'm sorry, I couldn't generate a response.";
+      
+      // Check if web search was used
+      const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
+      const webChunks = groundingChunks?.filter((c: any) => c.web?.uri) || [];
+      
+      if (webChunks.length > 0) {
+        const newKnowledge: SavedWebKnowledge = {
+          query: userMessage,
+          answer: responseText,
+          sources: webChunks.map((c: any) => c.web.uri),
+          timestamp: Date.now()
+        };
+        setSavedWebKnowledge(prev => {
+          const updated = [...prev, newKnowledge];
+          localStorage.setItem('tpe-web-knowledge', JSON.stringify(updated));
+          return updated;
+        });
+      }
+
+      setMessages(prev => [...prev, { role: 'model', content: responseText }]);
     } catch (error: any) {
       console.error("Chat error:", error);
       if (error?.status === 429 || error?.message?.includes('429') || error?.message?.includes('RESOURCE_EXHAUSTED')) {
@@ -198,7 +243,7 @@ export function Chatbot({ appData, theme }: ChatbotProps) {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-[100] flex flex-col items-end">
+    <div className={cn("fixed bottom-6 right-6 z-[100] flex flex-col items-end", theme)} data-theme={theme}>
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -227,6 +272,16 @@ export function Chatbot({ appData, theme }: ChatbotProps) {
               </div>
               <div className="flex items-center gap-1">
                 <button 
+                  onClick={() => setShowSavedKnowledge(!showSavedKnowledge)}
+                  className={cn(
+                    "p-1.5 rounded-lg transition-colors flex items-center gap-1",
+                    showSavedKnowledge ? "bg-white/20" : "hover:bg-white/10"
+                  )}
+                  title="Saved Web Knowledge"
+                >
+                  <Bookmark className="w-4 h-4" />
+                </button>
+                <button 
                   onClick={() => setIsExpanded(!isExpanded)}
                   className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
                 >
@@ -241,108 +296,148 @@ export function Chatbot({ appData, theme }: ChatbotProps) {
               </div>
             </div>
 
-            {/* Documents Bar */}
-            {documents.length > 0 && (
-              <div className="px-4 py-2 bg-theme-primary/5 border-b border-theme-card-border flex gap-2 overflow-x-auto no-scrollbar">
-                {documents.map((doc, i) => (
-                  <div 
-                    key={i}
-                    className="flex items-center gap-1.5 bg-white border border-theme-card-border px-2 py-1 rounded-lg shrink-0"
-                  >
-                    <FileText className="w-3 h-3 text-theme-primary" />
-                    <span className="text-[10px] font-medium text-slate-600 max-w-[80px] truncate">{doc.name}</span>
-                    <button 
-                      onClick={() => removeDocument(i)}
-                      className="hover:text-red-500 transition-colors"
+            {/* Main Content Area */}
+            {showSavedKnowledge ? (
+              <div className="flex-1 overflow-y-auto p-4 bg-theme-bg custom-scrollbar">
+                <div className="flex items-center gap-2 mb-4 text-theme-primary">
+                  <Globe className="w-5 h-5" />
+                  <h4 className="font-bold">Saved Web Knowledge</h4>
+                </div>
+                {savedWebKnowledge.length === 0 ? (
+                  <p className="text-sm text-theme-text/60 text-center mt-10">
+                    No web knowledge saved yet. When the bot searches the web for answers, they will be saved here for offline access.
+                  </p>
+                ) : (
+                  <div className="space-y-4">
+                    {savedWebKnowledge.map((item, idx) => (
+                      <div key={idx} className="bg-theme-card border border-theme-card-border p-4 rounded-xl shadow-sm">
+                        <p className="font-semibold text-sm text-theme-text mb-2">Q: {item.query}</p>
+                        <div className="prose prose-sm max-w-none prose-p:text-theme-text prose-headings:text-theme-text prose-strong:text-theme-text prose-li:text-theme-text prose-a:text-theme-primary mb-3">
+                          <Markdown>{item.answer}</Markdown>
+                        </div>
+                        {item.sources.length > 0 && (
+                          <div className="mt-2 pt-2 border-t border-theme-card-border">
+                            <p className="text-[10px] font-semibold text-theme-text/40 uppercase mb-1">Sources</p>
+                            <div className="flex flex-wrap gap-1">
+                              {item.sources.map((src, i) => (
+                                <a key={i} href={src} target="_blank" rel="noreferrer" className="text-[10px] text-theme-primary hover:underline truncate max-w-[150px] block">
+                                  {new URL(src).hostname}
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <>
+                {/* Documents Bar */}
+                {documents.length > 0 && (
+                  <div className="px-4 py-2 bg-theme-primary/5 border-b border-theme-card-border flex gap-2 overflow-x-auto no-scrollbar">
+                    {documents.map((doc, i) => (
+                      <div 
+                        key={i}
+                        className="flex items-center gap-1.5 bg-theme-card border border-theme-card-border px-2 py-1 rounded-lg shrink-0"
+                      >
+                        <FileText className="w-3 h-3 text-theme-primary" />
+                        <span className="text-[10px] font-medium text-theme-text max-w-[80px] truncate">{doc.name}</span>
+                        <button 
+                          onClick={() => removeDocument(i)}
+                          className="hover:text-red-500 transition-colors text-theme-text/60"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Messages */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+                  {messages.map((m, i) => (
+                    <div 
+                      key={i}
+                      className={cn(
+                        "flex gap-3",
+                        m.role === 'user' ? "flex-row-reverse" : "flex-row"
+                      )}
                     >
-                      <Trash2 className="w-3 h-3" />
+                      <div className={cn(
+                        "w-8 h-8 rounded-xl flex items-center justify-center shrink-0",
+                        m.role === 'user' ? "bg-theme-primary text-white" : "bg-theme-primary/10 text-theme-primary"
+                      )}>
+                        {m.role === 'user' ? <UserIcon className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+                      </div>
+                      <div className={cn(
+                        "max-w-[80%] p-3 rounded-2xl text-sm leading-relaxed",
+                        m.role === 'user' 
+                          ? "bg-theme-primary text-white rounded-tr-none" 
+                          : "bg-theme-card text-theme-text border border-theme-card-border rounded-tl-none"
+                      )}>
+                        <div className="prose prose-sm max-w-none prose-p:text-theme-text prose-headings:text-theme-text prose-strong:text-theme-text prose-li:text-theme-text prose-a:text-theme-primary">
+                          <Markdown>
+                            {m.content}
+                          </Markdown>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {isLoading && (
+                    <div className="flex gap-3">
+                      <div className="w-8 h-8 rounded-xl bg-theme-primary/10 text-theme-primary flex items-center justify-center">
+                        <Bot className="w-4 h-4" />
+                      </div>
+                      <div className="bg-theme-card border border-theme-card-border p-3 rounded-2xl rounded-tl-none">
+                        <Loader2 className="w-4 h-4 animate-spin text-theme-primary" />
+                      </div>
+                    </div>
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
+
+                {/* Input */}
+                <div className="p-4 border-t border-theme-card-border bg-theme-bg">
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploading}
+                      className="p-2 text-theme-text/40 hover:text-theme-primary transition-colors disabled:opacity-50"
+                    >
+                      {isUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Paperclip className="w-5 h-5" />}
+                    </button>
+                    <input 
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileUpload}
+                      multiple
+                      accept=".txt,.md,.pdf"
+                      className="hidden"
+                    />
+                    <input 
+                      type="text"
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                      placeholder="Ask a question..."
+                      className="flex-1 bg-theme-card border border-theme-card-border text-theme-text rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-theme-primary/20 focus:border-theme-primary transition-all placeholder:text-theme-text/40"
+                    />
+                    <button 
+                      onClick={handleSend}
+                      disabled={!input.trim() || isLoading}
+                      className="p-2 bg-theme-primary text-white rounded-xl hover:brightness-110 disabled:opacity-50 transition-all active:scale-95"
+                    >
+                      <Send className="w-5 h-5" />
                     </button>
                   </div>
-                ))}
-              </div>
+                  <p className="text-[9px] text-theme-text/40 mt-2 text-center">
+                    Answers based on uploaded docs, app data, and web search.
+                  </p>
+                </div>
+              </>
             )}
-
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
-              {messages.map((m, i) => (
-                <div 
-                  key={i}
-                  className={cn(
-                    "flex gap-3",
-                    m.role === 'user' ? "flex-row-reverse" : "flex-row"
-                  )}
-                >
-                  <div className={cn(
-                    "w-8 h-8 rounded-xl flex items-center justify-center shrink-0",
-                    m.role === 'user' ? "bg-theme-primary text-white" : "bg-slate-100 text-slate-500"
-                  )}>
-                    {m.role === 'user' ? <UserIcon className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
-                  </div>
-                  <div className={cn(
-                    "max-w-[80%] p-3 rounded-2xl text-sm leading-relaxed",
-                    m.role === 'user' 
-                      ? "bg-theme-primary text-white rounded-tr-none" 
-                      : "bg-slate-50 text-slate-700 border border-slate-100 rounded-tl-none"
-                  )}>
-                    <div className="prose prose-sm prose-slate max-w-none">
-                      <Markdown>
-                        {m.content}
-                      </Markdown>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {isLoading && (
-                <div className="flex gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center">
-                    <Bot className="w-4 h-4" />
-                  </div>
-                  <div className="bg-slate-50 border border-slate-100 p-3 rounded-2xl rounded-tl-none">
-                    <Loader2 className="w-4 h-4 animate-spin text-theme-primary" />
-                  </div>
-                </div>
-              )}
-              <div ref={messagesEndRef} />
-            </div>
-
-            {/* Input */}
-            <div className="p-4 border-t border-theme-card-border bg-theme-bg">
-              <div className="flex items-center gap-2">
-                <button 
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isUploading}
-                  className="p-2 text-slate-400 hover:text-theme-primary transition-colors disabled:opacity-50"
-                >
-                  {isUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Paperclip className="w-5 h-5" />}
-                </button>
-                <input 
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleFileUpload}
-                  multiple
-                  accept=".txt,.md,.pdf"
-                  className="hidden"
-                />
-                <input 
-                  type="text"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                  placeholder="Ask a question..."
-                  className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-theme-primary/20 focus:border-theme-primary transition-all"
-                />
-                <button 
-                  onClick={handleSend}
-                  disabled={!input.trim() || isLoading}
-                  className="p-2 bg-theme-primary text-white rounded-xl hover:brightness-110 disabled:opacity-50 transition-all active:scale-95"
-                >
-                  <Send className="w-5 h-5" />
-                </button>
-              </div>
-              <p className="text-[9px] text-slate-400 mt-2 text-center">
-                Answers based on uploaded docs and current app data.
-              </p>
-            </div>
           </motion.div>
         )}
       </AnimatePresence>

@@ -123,6 +123,11 @@
 }
 
 @layer base {
+  body {
+    background-color: var(--bg-main);
+    color: var(--text-main);
+  }
+  
   input[type="number"]::-webkit-inner-spin-button,
   input[type="number"]::-webkit-outer-spin-button {
     opacity: 1 !important;
