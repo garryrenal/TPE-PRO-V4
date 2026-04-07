@@ -176,6 +176,14 @@ service cloud.firestore {
              (!('entryTime' in data) || data.entryTime is string);
     }
 
+    function isValidNote(data) {
+      return data.userId is string &&
+             data.title is string &&
+             data.content is string &&
+             data.updatedAt is timestamp &&
+             (!('createdAt' in data) || data.createdAt is timestamp);
+    }
+
     match /records/{recordId} {
       allow read: if isAuthenticated() && isDocOwner();
       allow create: if isAuthenticated() && 
@@ -201,6 +209,18 @@ service cloud.firestore {
                       (!('entryDate' in resource.data) || request.resource.data.entryDate == resource.data.entryDate) &&
                       (!('entryTime' in resource.data) || request.resource.data.entryTime == resource.data.entryTime) &&
                       isValidProcedureSummary(request.resource.data);
+      allow delete: if isAuthenticated() && isDocOwner();
+    }
+
+    match /notes/{noteId} {
+      allow read: if isAuthenticated() && isDocOwner();
+      allow create: if isAuthenticated() && 
+                      request.resource.data.userId == request.auth.uid &&
+                      isValidNote(request.resource.data);
+      allow update: if isAuthenticated() && isDocOwner() &&
+                      request.resource.data.userId == resource.data.userId &&
+                      (!('createdAt' in resource.data) || request.resource.data.createdAt == resource.data.createdAt) &&
+                      isValidNote(request.resource.data);
       allow delete: if isAuthenticated() && isDocOwner();
     }
 

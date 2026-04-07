@@ -40,6 +40,8 @@ import {
 import Records from './components/Records';
 import { Chatbot } from './components/Chatbot';
 import ProcedureSummaries from './components/ProcedureSummaries';
+import Notes from './components/Notes';
+import { StickyNote } from 'lucide-react';
 
 export default function App() {
   return (
@@ -48,7 +50,7 @@ export default function App() {
 }
 
 function AppContent() {
-  const [view, setView] = useState<'calculator' | 'records' | 'summaries'>('calculator');
+  const [view, setView] = useState<'calculator' | 'records' | 'summaries' | 'notes'>('calculator');
   const [calcMode, setCalcMode] = useState<'tpe' | 'rbcx' | 'depletion'>('tpe');
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -382,6 +384,14 @@ function AppContent() {
     );
   }
 
+  if (view === 'notes' && user) {
+    return (
+      <div className={cn("min-h-screen bg-theme-bg text-theme-text", theme)} data-theme={theme}>
+        <Notes onBack={() => setView('calculator')} />
+      </div>
+    );
+  }
+
   return (
     <div className={cn(
       "min-h-screen font-sans pb-12 transition-colors duration-500 bg-theme-bg text-theme-text",
@@ -422,6 +432,16 @@ function AppContent() {
                   title="Procedure Summaries"
                 >
                   <FileText className="w-4 h-4 sm:w-5 sm:h-5" />
+                </button>
+                <button 
+                  onClick={() => setView('notes')}
+                  className={cn(
+                    "p-1.5 sm:p-2 rounded-full transition-colors",
+                    view === 'notes' ? "bg-white/20" : "hover:bg-white/10"
+                  )}
+                  title="Notes"
+                >
+                  <StickyNote className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
               </>
             )}
