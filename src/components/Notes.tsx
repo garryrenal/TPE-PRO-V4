@@ -162,6 +162,29 @@ export default function Notes({ onBack }: NotesProps) {
     }
   };
 
+  const handlePaste = async (e: React.ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf('image') !== -1) {
+        e.preventDefault();
+        const file = items[i].getAsFile();
+        if (!file) continue;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const base64 = event.target?.result as string;
+          setFormData(prev => ({
+            ...prev,
+            content: prev.content + `\n![Pasted Image](${base64})\n`
+          }));
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6">
       <div className="flex items-center justify-between mb-8">
@@ -233,7 +256,11 @@ export default function Notes({ onBack }: NotesProps) {
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 className="w-full bg-transparent border-none text-xl font-bold text-theme-text placeholder:text-theme-text/30 focus:ring-0 p-0"
               />
-              <div data-color-mode="auto" className="w-full rounded-2xl overflow-hidden border border-theme-card-border">
+              <div 
+                data-color-mode="auto" 
+                className="w-full rounded-2xl overflow-hidden border border-theme-card-border"
+                onPaste={handlePaste}
+              >
                 <MDEditor
                   value={formData.content}
                   onChange={(val) => setFormData({ ...formData, content: val || '' })}
