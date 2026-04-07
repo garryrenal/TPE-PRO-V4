@@ -258,15 +258,15 @@ export default function Notes({ onBack }: NotesProps) {
               />
               <div 
                 data-color-mode="auto" 
-                className="w-full rounded-2xl overflow-hidden border border-theme-card-border"
+                className="w-full rounded-2xl overflow-hidden border border-theme-card-border flex flex-col h-[60vh] min-h-[300px] max-h-[800px]"
                 onPaste={handlePaste}
               >
                 <MDEditor
                   value={formData.content}
                   onChange={(val) => setFormData({ ...formData, content: val || '' })}
-                  height={400}
+                  height="100%"
                   preview="live"
-                  className="!border-none"
+                  className="!border-none flex-1 overflow-hidden"
                 />
               </div>
             </div>
@@ -323,7 +323,7 @@ export default function Notes({ onBack }: NotesProps) {
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-4 sm:gap-6">
                 {filteredNotes.map(note => (
                   <motion.div
                     key={note.id}
