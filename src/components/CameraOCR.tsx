@@ -1,5 +1,5 @@
 import React, { useRef, useState, useCallback } from 'react';
-import { Camera, X, Check, RefreshCw, Loader2 } from 'lucide-react';
+import { Camera, X, Check, RefreshCw, Loader2, Flashlight, FlashlightOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GoogleGenAI, Type } from "@google/genai";
 import ReviewOCR from './ReviewOCR';
@@ -14,33 +14,73 @@ type CaptureStep = 'stats' | 'details' | 'review' | 'done';
 export default function CameraOCR({ onCapture, onClose }: CameraOCRProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState<CaptureStep>('stats');
   const [accumulatedData, setAccumulatedData] = useState<any>({});
+  const [isTorchOn, setIsTorchOn] = useState(false);
+  const [torchSupported, setTorchSupported] = useState(false);
+
+  const stopCamera = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    setStream(null);
+  }, []);
 
   const startCamera = useCallback(async () => {
+    stopCamera();
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' } 
+        video: { 
+          facingMode: 'environment',
+          width: { ideal: 1920 },
+          height: { ideal: 1080 }
+        } 
       });
+      streamRef.current = mediaStream;
       setStream(mediaStream);
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
       }
+      
+      // Check for torch support
+      const track = mediaStream.getVideoTracks()[0];
+      if (track) {
+        const capabilities = track.getCapabilities() as any;
+        setTorchSupported(!!capabilities.torch);
+      }
+      
       setError(null);
     } catch (err) {
       console.error("Error accessing camera:", err);
       setError("Could not access camera. Please ensure permissions are granted.");
     }
-  }, []);
+  }, [stopCamera]);
 
-  const stopCamera = useCallback(() => {
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-      setStream(null);
+  const toggleTorch = useCallback(async () => {
+    if (streamRef.current) {
+      const track = streamRef.current.getVideoTracks()[0];
+      if (track) {
+        try {
+          await track.applyConstraints({
+            advanced: [{ torch: !isTorchOn }] as any
+          });
+          setIsTorchOn(!isTorchOn);
+        } catch (err) {
+          console.error("Error toggling torch:", err);
+        }
+      }
+    }
+  }, [isTorchOn]);
+
+  React.useEffect(() => {
+    if (videoRef.current && stream) {
+      videoRef.current.srcObject = stream;
     }
   }, [stream]);
 
@@ -75,6 +115,7 @@ export default function CameraOCR({ onCapture, onClose }: CameraOCRProps) {
       const base64Data = capturedImage.split(',')[1];
 
       const statsPrompt = `Extract TPE procedure data from this "Procedure Stats" screen image from a Spectra Optia machine.
+                The image might have glare or be slightly angled. Please read carefully.
                 Return a JSON object with the following fields. Use null if a field is not found.
                 
                 Fields and Formats:
@@ -99,6 +140,7 @@ export default function CameraOCR({ onCapture, onClose }: CameraOCRProps) {
                 Be extremely precise with numbers. If a number has a decimal, include it.`;
 
       const detailsPrompt = `Extract TPE procedure data from this "Exchange Details" screen image from a Spectra Optia machine.
+                The image might have glare or be slightly angled. Please read carefully.
                 Return a JSON object with the following fields. Use null if a field is not found.
                 
                 Fields and Formats:
@@ -119,7 +161,7 @@ export default function CameraOCR({ onCapture, onClose }: CameraOCRProps) {
                 Be extremely precise with numbers.`;
 
       const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
+        model: "gemini-3.1-pro-preview",
         contents: [
           {
             parts: [
@@ -229,10 +271,19 @@ export default function CameraOCR({ onCapture, onClose }: CameraOCRProps) {
       <div className="w-full max-w-lg bg-theme-card rounded-3xl overflow-hidden shadow-2xl relative border border-theme-card-border">
         <button 
           onClick={onClose}
-          className="absolute top-4 right-4 z-10 p-2 bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors"
+          className="absolute top-4 right-4 z-20 p-2 bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors"
         >
           <X className="w-6 h-6" />
         </button>
+
+        {torchSupported && !capturedImage && (
+          <button 
+            onClick={toggleTorch}
+            className="absolute top-4 left-4 z-20 p-2 bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors"
+          >
+            {isTorchOn ? <Flashlight className="w-6 h-6 text-yellow-400" /> : <FlashlightOff className="w-6 h-6" />}
+          </button>
+        )}
 
         <div className="aspect-[3/4] bg-black relative overflow-hidden">
           {!capturedImage && (

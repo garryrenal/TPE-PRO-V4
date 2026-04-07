@@ -393,58 +393,58 @@ function AppContent() {
     )} data-theme={theme}>
       {/* Header */}
       <header className={cn(
-        "p-6 shadow-lg sticky top-0 z-10 transition-all duration-500 bg-theme-primary text-white"
+        "p-4 sm:p-6 shadow-lg sticky top-0 z-10 transition-all duration-500 bg-theme-primary text-white"
       )}>
-        <div className="max-w-md mx-auto flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="bg-white/20 p-2 rounded-xl backdrop-blur-sm">
-                  {calcMode === 'tpe' ? <Activity className="w-6 h-6" /> : <Calculator className="w-6 h-6" />}
+        <div className="max-w-md mx-auto flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="bg-white/20 p-1.5 sm:p-2 rounded-xl backdrop-blur-sm shrink-0">
+                  {calcMode === 'tpe' ? <Activity className="w-5 h-5 sm:w-6 sm:h-6" /> : <Calculator className="w-5 h-5 sm:w-6 sm:h-6" />}
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold tracking-tight leading-none">APHERESIS PRO</h1>
+                  <h1 className="text-base sm:text-xl font-bold tracking-tight leading-none">APHERESIS PRO</h1>
                 </div>
               </div>
-          <div className="flex items-center gap-1 relative">
+          <div className="flex flex-wrap items-center gap-1 relative">
             {user && (
               <>
                 <button 
                   onClick={() => setView('records')}
                   className={cn(
-                    "p-2 rounded-full transition-colors",
+                    "p-1.5 sm:p-2 rounded-full transition-colors",
                     view === 'records' ? "bg-white/20" : "hover:bg-white/10"
                   )}
                   title="View Records"
                 >
-                  <Database className="w-5 h-5" />
+                  <Database className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
                 <button 
                   onClick={() => setView('summaries')}
                   className={cn(
-                    "p-2 rounded-full transition-colors",
+                    "p-1.5 sm:p-2 rounded-full transition-colors",
                     view === 'summaries' ? "bg-white/20" : "hover:bg-white/10"
                   )}
                   title="Procedure Summaries"
                 >
-                  <FileText className="w-5 h-5" />
+                  <FileText className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
               </>
             )}
             {!user && (
               <button 
                 onClick={handleLogin}
-                className="p-2 hover:bg-white/10 rounded-full transition-colors"
+                className="p-1.5 sm:p-2 hover:bg-white/10 rounded-full transition-colors"
                 title="Sign In with Google"
               >
-                <LogIn className="w-5 h-5" />
+                <LogIn className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
             )}
             <div className="relative">
               <button 
                 onClick={() => setShowThemeMenu(!showThemeMenu)}
-                className="p-2 hover:bg-white/10 rounded-full transition-colors"
+                className="p-1.5 sm:p-2 hover:bg-white/10 rounded-full transition-colors"
                 title="Change Theme"
               >
-                <Palette className="w-5 h-5" />
+                <Palette className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
               
               <AnimatePresence>
@@ -497,25 +497,25 @@ function AppContent() {
             </div>
             <button 
               onClick={() => setShowLogic(true)}
-              className="p-2 hover:bg-white/10 rounded-full transition-colors"
+              className="p-1.5 sm:p-2 hover:bg-white/10 rounded-full transition-colors"
               title="View Calculation Logic"
             >
-              <Info className="w-5 h-5" />
+              <Info className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
             <button 
               onClick={resetPatientData}
-              className="p-2 hover:bg-white/10 rounded-full transition-colors"
+              className="p-1.5 sm:p-2 hover:bg-white/10 rounded-full transition-colors"
               title="Reset All"
             >
-              <RotateCcw className="w-5 h-5" />
+              <RotateCcw className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
             {user && (
               <button 
                 onClick={handleLogout}
-                className="p-2 hover:bg-white/10 rounded-full transition-colors"
+                className="p-1.5 sm:p-2 hover:bg-white/10 rounded-full transition-colors"
                 title="Sign Out"
               >
-                <LogOut className="w-5 h-5" />
+                <LogOut className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
             )}
           </div>
