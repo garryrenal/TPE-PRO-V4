@@ -305,14 +305,10 @@ function AppContent() {
       depletionVolume = tbv * Math.log(patientData.hct / mHct);
     }
 
-    // RBC replacement volume (Exchange Phase)
-    // If depletion is performed, the exchange starts at Min Hct
-    const startExchangeHct = depletionVolume > 0 ? mHct : patientData.hct;
-    const rcvAtStartOfExchange = tbv * (startExchangeHct / 100);
-
+    // Exchange Phase Volume = TBV * -ln(Target FCR / 100)
     let rbcxVolume = 0;
-    if (iHgbS > 0 && gHgbS > 0 && rHct > 0) {
-      rbcxVolume = rcvAtStartOfExchange * Math.log(iHgbS / gHgbS) / (rHct / 100);
+    if (tFCR > 0) {
+      rbcxVolume = tbv * -Math.log(tFCR / 100);
     }
     
     // RBC units assume 350 mL per unit and are rounded up to the nearest whole unit
@@ -829,37 +825,53 @@ function AppContent() {
           </div>
 
           <div className="space-y-4">
-            <div>
-              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 block">
-                Sex
-              </label>
-              <button
-                onClick={() => setSex(sex === 'male' ? 'female' : 'male')}
-                className={cn(
-                  "w-full py-3 rounded-xl border-2 transition-all font-medium flex items-center justify-center gap-3",
-                  sex === 'male' 
-                    ? "border-theme-primary-light bg-theme-primary-bg text-theme-primary-text" 
-                    : "border-pink-500 bg-pink-50 text-pink-700"
-                )}
-              >
-                <div className={cn(
-                  "w-10 h-5 bg-slate-200 rounded-full relative transition-colors",
-                  sex === 'male' 
-                    ? "bg-theme-primary-border" 
-                    : "bg-pink-200"
-                )}>
-                  <motion.div 
-                    animate={{ x: sex === 'male' ? 2 : 22 }}
-                    className={cn(
-                      "absolute top-1 w-3 h-3 rounded-full shadow-sm",
-                      sex === 'male' 
-                        ? "bg-theme-primary" 
-                        : "bg-pink-600"
-                    )}
-                  />
-                </div>
-                {sex === 'male' ? 'Male' : 'Female'}
-              </button>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-1.5 block">
+                  Sex
+                </label>
+                <button
+                  onClick={() => setSex(sex === 'male' ? 'female' : 'male')}
+                  className={cn(
+                    "w-full py-3 rounded-xl border-2 transition-all font-medium flex items-center justify-center gap-3 h-[46px]",
+                    sex === 'male' 
+                      ? "border-theme-primary-light bg-theme-primary-bg text-theme-primary-text" 
+                      : "border-pink-500 bg-pink-50 text-pink-700"
+                  )}
+                >
+                  <div className={cn(
+                    "w-10 h-5 bg-slate-200 rounded-full relative transition-colors",
+                    sex === 'male' 
+                      ? "bg-theme-primary-border" 
+                      : "bg-pink-200"
+                  )}>
+                    <motion.div 
+                      animate={{ x: sex === 'male' ? 2 : 22 }}
+                      className={cn(
+                        "absolute top-1 w-3 h-3 rounded-full shadow-sm",
+                        sex === 'male' 
+                          ? "bg-theme-primary" 
+                          : "bg-pink-600"
+                      )}
+                    />
+                  </div>
+                  {sex === 'male' ? 'Male' : 'Female'}
+                </button>
+              </div>
+
+              <div>
+                <InputGroup
+                  label="Weight"
+                  value={weight}
+                  onChange={setWeight}
+                  placeholder={weightUnit === 'kg' ? "e.g. 70" : "e.g. 154"}
+                  unit={weightUnit}
+                  onUnitToggle={handleWeightUnitChange}
+                  min={weightUnit === 'kg' ? LIMITS.weight.min : LIMITS.weightLb.min}
+                  max={weightUnit === 'kg' ? LIMITS.weight.max : LIMITS.weightLb.max}
+                  theme={theme}
+                />
+              </div>
             </div>
 
             <div className="space-y-4">
@@ -914,17 +926,6 @@ function AppContent() {
                   </div>
                 </div>
               )}
-              <InputGroup
-                label="Weight"
-                value={weight}
-                onChange={setWeight}
-                placeholder={weightUnit === 'kg' ? "e.g. 70" : "e.g. 154"}
-                unit={weightUnit}
-                onUnitToggle={handleWeightUnitChange}
-                min={weightUnit === 'kg' ? LIMITS.weight.min : LIMITS.weightLb.min}
-                max={weightUnit === 'kg' ? LIMITS.weight.max : LIMITS.weightLb.max}
-                theme={theme}
-              />
             </div>
 
             <div className="space-y-3">
@@ -1163,6 +1164,14 @@ function AppContent() {
                       </div>
                       <div className="text-[9px] font-bold text-theme-primary-light brightness-125 uppercase tracking-widest opacity-80">
                         Exchange mL
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-lg font-black text-white">
+                        {Math.round(stats.depletionVolume + stats.rbcxVolume)}
+                      </div>
+                      <div className="text-[9px] font-bold text-theme-primary-light brightness-125 uppercase tracking-widest opacity-80">
+                        Total Fluid mL
                       </div>
                     </div>
                   </div>

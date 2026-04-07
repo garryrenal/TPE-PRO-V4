@@ -81,7 +81,11 @@ export default function ReviewOCR({ data, onConfirm, onCancel, title = "Review E
                     {formatKey(key)}
                   </label>
                   <input
-                    type={typeof value === 'number' ? 'number' : 'text'}
+                    type={
+                      key === 'date' ? 'date' :
+                      (key === 'time' || key === 'startTime' || key === 'endTime') ? 'time' :
+                      typeof value === 'number' ? 'number' : 'text'
+                    }
                     value={(value ?? '') as any}
                     onChange={(e) => handleChange(key, typeof value === 'number' ? parseFloat(e.target.value) || 0 : e.target.value)}
                     className="w-full bg-theme-card border border-theme-card-border rounded-xl px-3 py-2 text-sm text-theme-text focus:ring-2 focus:ring-theme-primary/20 focus:border-theme-primary outline-none transition-all"

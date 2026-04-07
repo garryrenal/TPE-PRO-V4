@@ -673,8 +673,8 @@ export default function Records({ onBack, onUseRecord, patientData }: RecordsPro
                 <div className="lg:col-span-3 grid grid-cols-2 md:grid-cols-4 gap-4 bg-theme-bg/50 p-4 rounded-2xl border border-theme-card-border">
                   {renderField('Date', 'date', 'date')}
                   {renderField('Time', 'time', 'time')}
-                  {renderField('Start Time', 'startTime', 'text')}
-                  {renderField('End Time', 'endTime', 'text')}
+                  {renderField('Start Time', 'startTime', 'time')}
+                  {renderField('End Time', 'endTime', 'time')}
                 </div>
 
                 {/* Page 1 Fields */}
