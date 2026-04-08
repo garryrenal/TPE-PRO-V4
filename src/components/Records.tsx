@@ -20,7 +20,8 @@ import {
   RotateCcw,
   Image as ImageIcon,
   ArrowUpDown,
-  Download
+  Download,
+  Users
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GoogleGenAI, Type } from "@google/genai";
@@ -42,6 +43,7 @@ import { cn, generateRecId } from '../lib/utils';
 import { calculateTBV, PatientData } from '../lib/calculations';
 import CameraOCR from './CameraOCR';
 import ReviewOCR from './ReviewOCR';
+import PatientsModal, { Patient } from './PatientsModal';
 
 interface TPERecord {
   id?: string;
@@ -118,6 +120,7 @@ export default function Records({ onBack, onUseRecord, patientData }: RecordsPro
   const [sortBy, setSortBy] = useState<'date' | 'lastName'>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [isUploading, setIsUploading] = useState(false);
+  const [showPatientsModal, setShowPatientsModal] = useState(false);
   const [reviewData, setReviewData] = useState<any>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -645,12 +648,24 @@ export default function Records({ onBack, onUseRecord, patientData }: RecordsPro
 
               <div className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Patient Info */}
-                <div className="lg:col-span-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 bg-theme-primary/5 p-4 rounded-2xl border border-theme-primary-border/30">
-                  {renderField('Rec ID', 'recId', 'text', true)}
-                  {renderField('Last Name', 'lastName', 'text')}
-                  {renderField('First Name', 'firstName', 'text')}
-                  {renderField('M.I.', 'middleInitial', 'text')}
-                  {renderField('PID#', 'patientId', 'text')}
+                <div className="lg:col-span-3 bg-theme-primary/5 p-4 rounded-2xl border border-theme-primary-border/30">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-xs font-black uppercase tracking-widest text-theme-primary">Patient Info</h3>
+                    <button 
+                      onClick={() => setShowPatientsModal(true)}
+                      className="p-1.5 bg-theme-primary/10 text-theme-primary rounded-lg hover:bg-theme-primary/20 transition-colors flex items-center gap-1.5"
+                    >
+                      <Users className="w-3.5 h-3.5" />
+                      <span className="text-[10px] font-bold uppercase tracking-wider">Patients</span>
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                    {renderField('Rec ID', 'recId', 'text', true)}
+                    {renderField('Last Name', 'lastName', 'text')}
+                    {renderField('First Name', 'firstName', 'text')}
+                    {renderField('M.I.', 'middleInitial', 'text')}
+                    {renderField('PID#', 'patientId', 'text')}
+                  </div>
                 </div>
 
                 {/* Patient Stats Row */}
@@ -987,6 +1002,23 @@ export default function Records({ onBack, onUseRecord, patientData }: RecordsPro
           title="Review Uploaded Data"
         />
       )}
+
+      <AnimatePresence>
+        {showPatientsModal && (
+          <PatientsModal 
+            onClose={() => setShowPatientsModal(false)}
+            onSelectPatient={(patient) => {
+              setFormData({
+                ...formData,
+                firstName: patient.firstName,
+                lastName: patient.lastName,
+                middleInitial: patient.middleInitial,
+                patientId: patient.patientId
+              });
+            }}
+          />
+        )}
+      </AnimatePresence>
 
       {error && (
         <div className="fixed bottom-24 left-4 right-4 z-50">

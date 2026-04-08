@@ -71,6 +71,20 @@
         "entryTime": { "type": "string", "description": "The time when the record was entered into the system." }
       },
       "required": ["userId", "date", "createdAt"]
+    },
+    "Patient": {
+      "title": "Patient",
+      "description": "Patient demographics.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The UID of the user who owns this record." },
+        "firstName": { "type": "string", "description": "Patient's first name." },
+        "lastName": { "type": "string", "description": "Patient's last name." },
+        "middleInitial": { "type": "string", "description": "Patient's middle initial." },
+        "patientId": { "type": "string", "description": "Patient's ID number." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp when the record was created." }
+      },
+      "required": ["userId", "firstName", "lastName", "createdAt"]
     }
   },
   "firestore": {
@@ -81,6 +95,10 @@
     "/procedureSummaries/{summaryId}": {
       "schema": "ProcedureSummary",
       "description": "Collection of TPE procedure summaries."
+    },
+    "/patients/{patientId}": {
+      "schema": "Patient",
+      "description": "Collection of patients."
     }
   }
 }

@@ -184,6 +184,15 @@ service cloud.firestore {
              (!('createdAt' in data) || data.createdAt is timestamp);
     }
 
+    function isValidPatient(data) {
+      return data.userId is string &&
+             data.firstName is string &&
+             data.lastName is string &&
+             data.createdAt is string &&
+             (!('middleInitial' in data) || data.middleInitial is string) &&
+             (!('patientId' in data) || data.patientId is string);
+    }
+
     match /records/{recordId} {
       allow read: if isAuthenticated() && isDocOwner();
       allow create: if isAuthenticated() && 
@@ -221,6 +230,18 @@ service cloud.firestore {
                       request.resource.data.userId == resource.data.userId &&
                       (!('createdAt' in resource.data) || request.resource.data.createdAt == resource.data.createdAt) &&
                       isValidNote(request.resource.data);
+      allow delete: if isAuthenticated() && isDocOwner();
+    }
+
+    match /patients/{patientId} {
+      allow read: if isAuthenticated() && isDocOwner();
+      allow create: if isAuthenticated() && 
+                      request.resource.data.userId == request.auth.uid &&
+                      isValidPatient(request.resource.data);
+      allow update: if isAuthenticated() && isDocOwner() &&
+                      request.resource.data.userId == resource.data.userId &&
+                      request.resource.data.createdAt == resource.data.createdAt &&
+                      isValidPatient(request.resource.data);
       allow delete: if isAuthenticated() && isDocOwner();
     }
 
