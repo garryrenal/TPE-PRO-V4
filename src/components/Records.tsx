@@ -250,36 +250,36 @@ export default function Records({ onBack, onUseRecord, patientData }: RecordsPro
             parts: [
               ...fileParts,
               {
-                text: `Extract TPE procedure data from these Spectra Optia screen images (Procedure Stats and/or Exchange Details). 
+                text: `Extract TPE procedure data from the provided Spectra Optia screen image.
                 Return a JSON object with all found fields. Use null if a field is not found.
                 
-                Fields and Formats:
-                - firstName: string (Patient's first name)
-                - lastName: string (Patient's last name)
-                - middleInitial: string (Patient's middle initial, 1 character)
-                - patientId: string (Patient ID or PID#)
-                - date: string (Format: MM-DD-YYYY. Usually located directly below the 'time' value)
-                - time: string (Format: HH:mm, 24-hour)
-                - startTime: string (Format: HH:mm)
-                - endTime: string (Format: HH:mm)
-                - acUsed: number (Total AC used in mL)
-                - removeBag: number (Total volume in remove bag in mL)
-                - replacementUsed: number (Total replacement fluid used in mL)
-                - bolus: number (Total bolus volume in mL)
+                Image Layout Guide:
+                - The red box (left column) contains the field names.
+                - The green box (middle column) contains the final values for those fields.
+                - The blue box inside the green box (e.g., "(AC 260)") is "AC in Remove Bag (mL)".
+                - The blue box on the top right with "AC" is "AC Used (mL)".
+                - The blue box on the bottom right is "AC to patient: X mL" which is "AC to Patient (mL)".
+                - Other blue boxes on the right include "Rinseback" and "Bolus".
+                - The blue box on the very top right has the "Date", "Start Time" (first time), and "End Time" (second time).
+
+                Fields to extract:
+                - date: string (Format: MM-DD-YYYY from the top right box)
+                - startTime: string (Format: HH:mm from the top right box, the first time listed)
+                - endTime: string (Format: HH:mm from the top right box, the second time listed)
+                - acUsed: number (From the top right blue box labeled AC)
+                - removeBag: number (From the green box row for "Remove Bag (mL)")
+                - replacementUsed: number (From the green box row for "Replacement Used (mL)")
+                - bolus: number (From the blue box labeled Bolus)
                 - tubingSet: number (Tubing set volume in mL)
-                - rinseback: number (Rinseback volume in mL)
-                - runTime: number (Total run time in minutes)
-                - fluidBalanceMl: number (Fluid balance in mL)
-                - fluidBalancePercent: number (Fluid balance percentage)
-                - inletProcessed: number (Total inlet volume processed in mL)
-                - plasmaVolumesExchanged: number (Number of plasma volumes exchanged)
-                - plasmaRemoved: number (Total plasma removed in mL)
-                - acInRemoveBag: number (AC volume in remove bag in mL)
-                - acToPatient: number (AC volume delivered to patient in mL)
-                - acUsedForPrime: number (AC used for priming in mL)
-                - salineToPatientAir: number (Saline to patient/air in mL)
-                - customPrime: number (Custom prime volume in mL)
-                - salineRinse: number (Saline rinse volume in mL)
+                - rinseback: number (From the blue box labeled Rinseback)
+                - runTime: number (From the green box row for "Run Time (min)")
+                - fluidBalanceMl: number (From the green box row for "Fluid Balance (mL)")
+                - fluidBalancePercent: number (From the green box row for "Fluid Balance (%)")
+                - inletProcessed: number (From the green box row for "Inlet (mL)")
+                - plasmaVolumesExchanged: number (From the green box row for "Plasma Volumes Exchanged")
+                - plasmaRemoved: number (From the green box row for "Plasma Removed (mL)")
+                - acInRemoveBag: number (From the blue box inside the green box)
+                - acToPatient: number (From the bottom right blue box)
                 
                 Be extremely precise with numbers. If a number has a decimal, include it.
                 Only return the JSON object.`,
@@ -292,10 +292,6 @@ export default function Records({ onBack, onUseRecord, patientData }: RecordsPro
           responseSchema: {
             type: Type.OBJECT,
             properties: {
-              firstName: { type: Type.STRING },
-              lastName: { type: Type.STRING },
-              middleInitial: { type: Type.STRING },
-              patientId: { type: Type.STRING },
               acUsed: { type: Type.NUMBER },
               removeBag: { type: Type.NUMBER },
               replacementUsed: { type: Type.NUMBER },
@@ -312,10 +308,6 @@ export default function Records({ onBack, onUseRecord, patientData }: RecordsPro
               plasmaRemoved: { type: Type.NUMBER },
               acInRemoveBag: { type: Type.NUMBER },
               acToPatient: { type: Type.NUMBER },
-              acUsedForPrime: { type: Type.NUMBER },
-              salineToPatientAir: { type: Type.NUMBER },
-              customPrime: { type: Type.NUMBER },
-              salineRinse: { type: Type.NUMBER },
               date: { type: Type.STRING },
               time: { type: Type.STRING },
             }
@@ -325,6 +317,13 @@ export default function Records({ onBack, onUseRecord, patientData }: RecordsPro
 
       const text = response.text?.trim() || "{}";
       const extractedData = JSON.parse(text === "" ? "{}" : text);
+      
+      // Default additional fluid details to 0 for uploads
+      extractedData.acUsedForPrime = 0;
+      extractedData.salineToPatientAir = 0;
+      extractedData.customPrime = 0;
+      extractedData.salineRinse = 0;
+
       setReviewData(extractedData);
     } catch (err) {
       console.error("Upload OCR Error:", err);
@@ -679,7 +678,18 @@ export default function Records({ onBack, onUseRecord, patientData }: RecordsPro
 
                 {/* Page 1 Fields */}
                 <div className="space-y-4">
-                  <h3 className="text-xs font-black uppercase tracking-widest text-theme-primary">Procedure Stats</h3>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-black uppercase tracking-widest text-theme-primary">Procedure Stats</h3>
+                    <button 
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploading}
+                      className="p-1.5 bg-theme-primary/10 text-theme-primary rounded-lg hover:bg-theme-primary/20 transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                      title="Upload Image using Report"
+                    >
+                      {isUploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                      <span className="text-[10px] font-bold uppercase tracking-wider">Upload</span>
+                    </button>
+                  </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3">
                     {renderField('AC Used (mL)', 'acUsed')}
                     {renderField('Remove Bag (mL)', 'removeBag')}
