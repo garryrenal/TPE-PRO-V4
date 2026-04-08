@@ -244,7 +244,7 @@ export default function Records({ onBack, onUseRecord, patientData }: RecordsPro
       }));
 
       const response = await ai.models.generateContent({
-        model: "gemini-3.1-pro-preview",
+        model: "gemini-3-flash-preview",
         contents: [
           {
             parts: [
@@ -261,6 +261,7 @@ export default function Records({ onBack, onUseRecord, patientData }: RecordsPro
                 - The blue box on the bottom right is "AC to patient: X mL" which is "AC to Patient (mL)".
                 - Other blue boxes on the right include "Rinseback" and "Bolus".
                 - The blue box on the very top right has the "Date", "Start Time" (first time), and "End Time" (second time).
+                - The blue box in the top middle (below "Software version") contains "Sex", "Height", "Weight", and "Hct".
 
                 Fields to extract:
                 - date: string (Format: MM-DD-YYYY from the top right box)
@@ -280,6 +281,10 @@ export default function Records({ onBack, onUseRecord, patientData }: RecordsPro
                 - plasmaRemoved: number (From the green box row for "Plasma Removed (mL)")
                 - acInRemoveBag: number (From the blue box inside the green box)
                 - acToPatient: number (From the bottom right blue box)
+                - sex: string (From the top middle blue box, e.g., "M" or "F" or "Male" or "Female")
+                - ht: number (Height in cm from the top middle blue box. If the image shows feet and inches like 5'8'', convert it to cm: e.g., 5*30.48 + 8*2.54 = 173. Round to nearest integer)
+                - wt: number (Weight in kg from the top middle blue box)
+                - hct: number (Hematocrit percentage from the top middle blue box, e.g. 39)
                 
                 Be extremely precise with numbers. If a number has a decimal, include it.
                 Only return the JSON object.`,
@@ -310,6 +315,10 @@ export default function Records({ onBack, onUseRecord, patientData }: RecordsPro
               acToPatient: { type: Type.NUMBER },
               date: { type: Type.STRING },
               time: { type: Type.STRING },
+              sex: { type: Type.STRING },
+              ht: { type: Type.NUMBER },
+              wt: { type: Type.NUMBER },
+              hct: { type: Type.NUMBER },
             }
           }
         }
